@@ -29,8 +29,9 @@ void callbackDispatcher() {
       final id = args[1] as String;
       final status = args[2] as int;
       final progress = args[3] as int;
+      final count = args[4] as int;
 
-      callback(id, DownloadTaskStatus(status), progress);
+      callback(id, DownloadTaskStatus(status), progress, count);
     })
     ..invokeMethod<void>('didInitializeDispatcher');
 }

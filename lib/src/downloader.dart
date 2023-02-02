@@ -16,6 +16,7 @@ typedef DownloadCallback = void Function(
   String id,
   DownloadTaskStatus status,
   int progress,
+  int count,
 );
 
 /// Provides access to all functions of the plugin in a single place.

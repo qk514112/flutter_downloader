@@ -66,6 +66,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
     private var debug = false
     private var ignoreSsl = false
     private var lastProgress = 0
+    private var speed = 0
     private var primaryId = 0
     private var msgStarted: String? = null
     private var msgInProgress: String? = null
@@ -393,10 +394,23 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                 var count = downloadedBytes
                 var bytesRead: Int
                 val buffer = ByteArray(BUFFER_SIZE)
+                var secondCount = 0
+                var beforeTime = System.currentTimeMillis()
                 // using isStopped to monitor canceling task
                 while (inputStream.read(buffer).also { bytesRead = it } != -1 && !isStopped) {
                     count += bytesRead.toLong()
                     val progress = (count * 100 / (contentLength + downloadedBytes)).toInt()
+
+                    var currentTime = System.currentTimeMillis()
+                    if (currentTime - beforeTime > 1000) {
+                        beforeTime = currentTime
+                        speed = secondCount
+                        sendUpdateProcessEvent(DownloadStatus.RUNNING, lastProgress)
+                        secondCount = 0;
+                    } else {
+                        secondCount += bytesRead
+                    }
+
                     outputStream?.write(buffer, 0, bytesRead)
                     if ((lastProgress == 0 || progress > lastProgress + step || progress == 100) &&
                         progress != lastProgress
@@ -714,6 +728,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         args.add(id.toString())
         args.add(status.ordinal)
         args.add(progress)
+        args.add(speed)
         synchronized(isolateStarted) {
             if (!isolateStarted.get()) {
                 isolateQueue.add(args)
